@@ -22,6 +22,12 @@
     section: 'ytmusic-section-list-renderer',
     shelf: 'ytmusic-carousel-shelf-renderer',
     artistHeader: 'ytmusic-immersive-header-renderer',
+    searchHide: [
+      'ytmusic-tabbed-search-results-renderer ytmusic-tabs', // abas YT MUSIC e BIBLIOTECA
+      'ytmusic-tabbed-search-results-renderer ytmusic-chip-cloud-renderer', // filtros Artistas, Músicas etc.
+    ],
+    searchCard: 'ytmusic-card-shelf-renderer', // resultado principal da busca
+    cardRow: 'ytmusic-responsive-list-item-renderer',
     firstTrack: 'ytmusic-shelf-renderer ytmusic-responsive-list-item-renderer',
     player: 'ytmusic-app-layout',
     subsBrowseId: 'FEmusic_library_corpus_artists',
@@ -35,13 +41,23 @@
   const css = `
     ${CONFIG.hide.join(',')} { display: none !important; }
     html[ytm-home] ${CONFIG.homeHide.join(`, html[ytm-home] `)} { display: none !important; }
+    ${CONFIG.searchHide.join(',')} { display: none !important; }
     [ytm-hidden] { display: none !important; }
+    /* A barra de navegação passa 2px da largura e gerava scroll lateral; carrosseis já rolam por setas. */
+    html, body { overflow-x: clip !important; }
+    ::-webkit-scrollbar:horizontal { display: none !important; height: 0 !important; }
+    /* Esconde a logo quando a busca está aberta (aparecia um pedaço atrás do campo). */
+    html[ytm-searching] ytmusic-nav-bar ytmusic-logo { visibility: hidden !important; }
     * { -webkit-user-select: none !important; user-select: none !important; }
     input, textarea { -webkit-user-select: text !important; user-select: text !important; }
 
     /* Escolha a dedo (início) e Top músicas (artista) sempre antes das outras prateleiras. */
     ${CONFIG.section} > #contents:has(> [ytm-first]) { display: flex; flex-direction: column; }
     [ytm-first] { order: -1; }
+
+    /* Menos espaço entre prateleiras: 16 (margem) + 24 (carrossel) + 16 (cabeçalho) virou 8 + 16. */
+    ${CONFIG.shelf} { margin-bottom: 0 !important; }
+    ${CONFIG.shelf} ytmusic-carousel { margin-bottom: 8px !important; }
 
     /* Cartões menores: cerca de 4 por tela. */
     ${CONFIG.shelf} ytmusic-two-row-item-renderer { width: ${CONFIG.cardSize}px !important; }
@@ -71,13 +87,18 @@
     ${CONFIG.artistHeader} .buttons .subscribe { order: 3; margin: 0 0 0 auto !important; }
     ${CONFIG.artistHeader} .buttons .play-buttons > :not(.play-button):not(.radio-button) { order: 4; }
     ${CONFIG.artistHeader} .buttons .play-button, ${CONFIG.artistHeader} .buttons .radio-button { margin: 0 !important; }
+    ${CONFIG.searchCard} #actions { gap: 8px !important; }
+    ${CONFIG.searchCard} #actions > yt-button-renderer { flex: 1 1 0; min-width: 0; }
+    ${CONFIG.searchCard} #actions .ytm-start { order: -1; flex: none; }
+    ${CONFIG.searchCard} #actions yt-button-renderer button { width: 100%; background: transparent !important; color: #fff !important;
+      border: 1px solid rgba(255,255,255,.3) !important; }
     .ytm-start { height: 36px; padding: 0 16px; border: 0; border-radius: 18px; background: #fff; color: #030303;
       font: 500 14px Roboto, Arial, sans-serif; cursor: pointer; flex: none; }
     ${CONFIG.artistHeader} .play-button button, ${CONFIG.artistHeader} .radio-button button {
       background: transparent !important; color: #fff !important; border: 1px solid rgba(255,255,255,.3) !important; }
     ${CONFIG.artistHeader} .subscribe button { width: 40px; min-width: 0; height: 36px; padding: 0 !important; border-radius: 18px;
       display: flex; align-items: center; justify-content: center; }
-    // Vermelho do YouTube na inscrição ainda não feita (o site usa um tom mais rosado).
+    /* Vermelho do YouTube na inscrição ainda não feita (o site usa um tom mais rosado, #f57). */
     ${CONFIG.artistHeader} .subscribe:not([is-subscribed]) button { color: #f00 !important; border-color: #f00 !important; }
     ${CONFIG.artistHeader} .subscribe .ytSpecButtonShapeNextButtonTextContent { display: none !important; }
     ${CONFIG.artistHeader} .subscribe button::before { content: ""; width: 22px; height: 22px; background: currentColor;
@@ -216,8 +237,19 @@
 
   const homeSection = () => $$(CONFIG.section).find((e) => e.offsetParent !== null);
 
+  // Busca aberta: na rota /search ou com o campo em foco.
+  const updateSearching = () => {
+    const box = $('ytmusic-search-box');
+    const on = location.pathname.startsWith('/search') || (box && box.contains(document.activeElement));
+    document.documentElement.toggleAttribute('ytm-searching', !!on);
+  };
+
+  let wasHome = false;
   const updateHome = () => {
     const home = isHome();
+    // Voltou para o início (ex.: depois de inscrever ou cancelar): recarrega a lista de inscritos.
+    if (home && !wasHome && subs) subs.at = 0;
+    wasHome = home;
     document.documentElement.toggleAttribute('ytm-home', home);
     const own = $('#ytm-subs');
     if (!home) {
@@ -274,6 +306,22 @@
     }
   };
 
+  // Busca: Iniciar antes de Aleatório e Mix no resultado principal.
+  const updateSearch = () => {
+    for (const card of $$(CONFIG.searchCard)) {
+      const bar = $('#actions', card);
+      if (!bar || $('.ytm-start', bar) || $$('yt-button-renderer', bar).length < 2) continue;
+      const b = document.createElement('button');
+      b.className = 'ytm-start';
+      b.textContent = 'Iniciar';
+      b.addEventListener('click', () => {
+        const play = $(`${CONFIG.cardRow} ytmusic-play-button-renderer`, card);
+        if (play) play.click();
+      });
+      bar.prepend(b);
+    }
+  };
+
   const updateMenus = () => {
     for (const it of $$('ytmusic-menu-service-item-renderer, ytmusic-toggle-menu-service-item-renderer, ytmusic-menu-navigation-item-renderer')) {
       if (CONFIG.hideMenuText.test(it.textContent)) it.setAttribute('ytm-hidden', '');
@@ -285,7 +333,9 @@
     queued = false;
     try {
       updateHome();
+      updateSearching();
       updateArtist();
+      updateSearch();
       updateFirst();
       updateMenus();
     } catch (e) {
@@ -321,6 +371,7 @@
   // O app chama isto ao abrir o popover: tocando = mostra o player, senão volta ao início.
   window.__ytmOnOpen = () => {
     try {
+      if (subs) subs.at = 0; // reabrir o popover também atualiza os inscritos
       const v = $('video');
       if (v && !v.paused) openPlayer(v);
       else if (!isHome()) goHome();
@@ -333,6 +384,8 @@
     document.documentElement.append(style);
     new MutationObserver(schedule).observe(document, { childList: true, subtree: true });
     window.addEventListener('popstate', schedule);
+    document.addEventListener('focusin', schedule);
+    document.addEventListener('focusout', schedule);
     schedule();
   } catch (e) {}
 })();
