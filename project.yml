@@ -1,0 +1,30 @@
+name: YTMusicBar
+options:
+  bundleIdPrefix: com.treendz
+  deploymentTarget:
+    macOS: "13.0"
+targets:
+  YTMusicBar:
+    type: application
+    platform: macOS
+    sources: [YTMusicBar]
+    info:
+      path: YTMusicBar/Info.plist
+      properties:
+        CFBundleName: YTMusicBar
+        CFBundleDisplayName: YTMusicBar
+        LSUIElement: true
+        LSMinimumSystemVersion: "13.0"
+    entitlements:
+      path: YTMusicBar/YTMusicBar.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+    settings:
+      base:
+        PRODUCT_NAME: YTMusicBar
+        PRODUCT_BUNDLE_IDENTIFIER: com.treendz.ytmusicbar
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        SWIFT_VERSION: "5.9"
+        ENABLE_HARDENED_RUNTIME: true
