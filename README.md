@@ -85,7 +85,6 @@ The Xcode project is generated from [`project.yml`](project.yml) and is not comm
 | Open the menu | Right-click the icon |
 | Reload the page | Menu, **Recarregar** |
 | Keep the original track order | Menu, **Manter ordem das faixas** |
-| Turn the global shortcut on or off | Menu, **Atalho global** |
 | Launch at login | Menu, **Iniciar com o macOS** |
 | Quit | Menu, **Sair** |
 
@@ -141,7 +140,7 @@ The converter handles the basics only: `||domain^`, simple URL patterns and `##s
 - The ad selectors and the shuffle and queue selectors were not validated against every page variant.
 - Playback stops at the end of a playlist only when the original queue size was captured. Very short playlists or fast track changes can slip through.
 - Opening the player page restarts the track, so the app restores the position afterwards. You may hear a short skip.
-- The shortcut is fixed to <kbd>⌥</kbd> <kbd>S</kbd>.
+- The shortcut is always on and fixed to <kbd>⌥</kbd> <kbd>S</kbd>.
 - One account at a time.
 
 ## Development

@@ -22,7 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.action = #selector(statusItemClicked)
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
-        applyShortcutSetting()
+        hotKey = HotKeyService { [weak self] in self?.togglePopover() }
     }
 
     @objc private func statusItemClicked() {
@@ -39,22 +39,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func applyShortcutSetting() {
-        hotKey = Settings.globalShortcut ? HotKeyService { [weak self] in self?.togglePopover() } : nil
-    }
-
     private func showMenu() {
         let menu = NSMenu()
-        func add(_ title: String, _ action: Selector, on: Bool? = nil, key: String = "") {
+        @discardableResult
+        func add(_ title: String, _ action: Selector, on: Bool? = nil, key: String = "") -> NSMenuItem {
             let item = menu.addItem(withTitle: title, action: action, keyEquivalent: key)
             item.target = self
             if let on { item.state = on ? .on : .off }
+            return item
         }
-        add("Abrir", #selector(open))
+        add("Abrir YTMusicBar", #selector(open)).toolTip = "Atalho global: Option+S"
         add("Recarregar", #selector(reload))
         menu.addItem(.separator())
         add("Manter ordem das faixas", #selector(toggleOrder), on: Settings.keepOrder)
-        add("Atalho global (Option+S)", #selector(toggleShortcut), on: Settings.globalShortcut)
         add("Iniciar com o macOS", #selector(toggleLogin), on: SMAppService.mainApp.status == .enabled)
         menu.addItem(.separator())
         menu.addItem(withTitle: "Sair", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -70,11 +67,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleOrder() {
         Settings.keepOrder.toggle()
         WebViewHost.shared.applyOrderSetting()
-    }
-
-    @objc private func toggleShortcut() {
-        Settings.globalShortcut.toggle()
-        applyShortcutSetting()
     }
 
     @objc private func toggleLogin() {

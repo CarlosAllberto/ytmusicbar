@@ -85,7 +85,6 @@ O projeto Xcode é gerado a partir do [`project.yml`](project.yml) e não vai pa
 | Abrir o menu | Clique direito no ícone |
 | Recarregar a página | Menu, **Recarregar** |
 | Manter a ordem original das faixas | Menu, **Manter ordem das faixas** |
-| Ligar ou desligar o atalho global | Menu, **Atalho global** |
 | Iniciar com o macOS | Menu, **Iniciar com o macOS** |
 | Sair | Menu, **Sair** |
 
@@ -138,7 +137,7 @@ O conversor cobre só o básico: `||dominio^`, padrões de URL simples e `##sele
 - Os seletores de anúncio, shuffle e fila não foram validados em todas as variações da página.
 - A reprodução só para no fim da playlist quando o tamanho original da fila foi capturado. Playlists muito curtas ou trocas rápidas de faixa podem escapar.
 - Abrir a página do player reinicia a faixa, então o app restaura a posição depois. Pode haver um pequeno salto no áudio.
-- O atalho é fixo em <kbd>⌥</kbd> <kbd>S</kbd>.
+- O atalho fica sempre ligado e é fixo em <kbd>⌥</kbd> <kbd>S</kbd>.
 - Uma conta por vez.
 
 ## Desenvolvimento

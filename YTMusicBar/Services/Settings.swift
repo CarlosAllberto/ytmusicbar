@@ -9,8 +9,4 @@ enum Settings {
         get { d.object(forKey: "keepOrder") as? Bool ?? true }
         set { d.set(newValue, forKey: "keepOrder") }
     }
-    static var globalShortcut: Bool {
-        get { d.object(forKey: "globalShortcut") as? Bool ?? true }
-        set { d.set(newValue, forKey: "globalShortcut") }
-    }
 }
