@@ -107,10 +107,9 @@ YTMusicBar/
 
 - **AppKit, not `MenuBarExtra`.** A status item with a popover allows a right-click menu and full control of the WebView. This is also the simplest way to keep the page alive.
 - **One WebView that stays alive.** `WebViewHost` creates a single `WKWebView`. When the popover closes, the view moves to a hidden window, so the audio keeps playing. The page loads only after the block rules compile.
-- **Four injected scripts** in [`Resources/`](YTMusicBar/Resources):
+- **Three injected scripts** in [`Resources/`](YTMusicBar/Resources):
   - `inject-ads.js` skips ads and removes promotions.
   - `inject-order.js` keeps the original track order.
-  - `inject-media.js` sends the track from `navigator.mediaSession` to the app.
   - `inject-ui.js` hides elements, adds the carousel and the buttons, and decides which page to show on reopen.
 - **Settings** live in `UserDefaults`, because `@AppStorage` only works inside SwiftUI views.
 

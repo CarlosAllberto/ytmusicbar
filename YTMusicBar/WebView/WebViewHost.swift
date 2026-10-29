@@ -3,7 +3,7 @@ import WebKit
 
 /// Dono único do WKWebView. Quando o popover fecha, a view volta para uma janela
 /// oculta, para o macOS não suspender a página e o áudio continuar tocando.
-final class WebViewHost: NSObject, WKScriptMessageHandler {
+final class WebViewHost: NSObject {
     static let shared = WebViewHost()
 
     private static let homeURL = URL(string: "https://music.youtube.com")!
@@ -12,9 +12,6 @@ final class WebViewHost: NSObject, WKScriptMessageHandler {
 
     let webView: WKWebView
     private let hiddenWindow: NSWindow
-
-    /// Recebe o estado da faixa enviado por inject-media.js.
-    var onNowPlaying: (([String: Any]) -> Void)?
 
     private override init() {
         let config = WKWebViewConfiguration()
@@ -37,7 +34,6 @@ final class WebViewHost: NSObject, WKScriptMessageHandler {
         hiddenWindow.collectionBehavior = [.auxiliary, .transient, .ignoresCycle]
 
         super.init()
-        config.userContentController.add(self, name: "nowplaying")
         park()
         #if DEBUG
         startDebugBridge()
@@ -82,7 +78,6 @@ final class WebViewHost: NSObject, WKScriptMessageHandler {
                                        injectionTime: .atDocumentStart, forMainFrameOnly: true))
         if let s = Self.script("inject-ads", .atDocumentStart) { ucc.addUserScript(s) }
         if let s = Self.script("inject-order", .atDocumentEnd) { ucc.addUserScript(s) }
-        if let s = Self.script("inject-media", .atDocumentEnd) { ucc.addUserScript(s) }
         if let s = Self.script("inject-ui", .atDocumentEnd) { ucc.addUserScript(s) }
 
         AdBlock.install(in: ucc) { [weak self] in
@@ -111,10 +106,5 @@ final class WebViewHost: NSObject, WKScriptMessageHandler {
 
     func applyOrderSetting() {
         run("window.__ytmOrder && (window.__ytmOrder.enabled = \(Settings.keepOrder))")
-    }
-
-    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.name == "nowplaying", let info = message.body as? [String: Any] else { return }
-        onNowPlaying?(info)
     }
 }

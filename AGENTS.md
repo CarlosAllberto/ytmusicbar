@@ -18,7 +18,7 @@ Ponte de debug (só Debug, `WebViewHost.startDebugBridge`): grave JS em `~/Libra
 
 ## Arquitetura em uma linha
 
-`AppDelegate` (status item + popover) mostra a `WKWebView` única do `WebViewHost`, que injeta quatro scripts JS (`Resources/inject-*.js`) e carrega regras de bloqueio (`Resources/rules*.json`); `MediaControls` liga as teclas de mídia ao player.
+`AppDelegate` (status item + popover) mostra a `WKWebView` única do `WebViewHost`, que injeta três scripts JS (`Resources/inject-*.js`) e carrega regras de bloqueio (`Resources/rules*.json`); `MediaControls` liga as teclas de mídia ao player.
 
 Detalhes por área ficam em `.claude/rules/` e carregam ao mexer nos arquivos correspondentes: `webview.md`, `js-scripts.md`, `services.md`, `adblock-rules.md`.
 

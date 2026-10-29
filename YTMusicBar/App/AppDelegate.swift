@@ -13,7 +13,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentViewController = PopoverController()
 
         media = MediaControls { js in WebViewHost.shared.run(js) }
-        WebViewHost.shared.onNowPlaying = { [weak self] info in self?.media.update(info) }
         WebViewHost.shared.start()  // carrega a página já na abertura, para tocar sem popover
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)

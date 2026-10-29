@@ -104,10 +104,9 @@ YTMusicBar/
 
 - **AppKit, não `MenuBarExtra`.** Um status item com popover permite menu no clique direito e controle total da WebView. É também o jeito mais simples de manter a página viva.
 - **Uma WebView que fica viva.** O `WebViewHost` cria uma única `WKWebView`. Quando o popover fecha, a view vai para uma janela oculta, e o áudio continua. A página só carrega depois que as regras de bloqueio compilam.
-- **Quatro scripts injetados** em [`Resources/`](YTMusicBar/Resources):
+- **Três scripts injetados** em [`Resources/`](YTMusicBar/Resources):
   - `inject-ads.js` pula anúncios e remove promoções.
   - `inject-order.js` mantém a ordem original das faixas.
-  - `inject-media.js` envia a faixa do `navigator.mediaSession` para o app.
   - `inject-ui.js` esconde elementos, adiciona o carrossel e os botões e decide a página na reabertura.
 - **Configurações** ficam em `UserDefaults`, porque `@AppStorage` só funciona dentro de views SwiftUI.
 

@@ -11,6 +11,7 @@
       '#guide-button', // menu hambúrguer
       'tp-yt-app-drawer#guide', // gaveta lateral que o botão abre
       'ytmusic-menu-service-item-download-renderer', // "Baixar" nos três pontinhos
+      'tp-yt-paper-toast', // toasts, ex.: "Iniciando a rádio"
     ],
     // Escondidos só na página inicial (rota "/").
     homeHide: ['ytmusic-chip-cloud-renderer'], // chips Podcasts, Para treinar etc.
@@ -355,12 +356,14 @@
     const d = mp && mp.getVideoData && mp.getVideoData();
     if (!d || !d.video_id || location.pathname.startsWith('/watch')) return;
     const t = video.currentTime;
+    const wasPaused = video.paused;
     navigate({ watchEndpoint: { videoId: d.video_id, playlistId: d.list || undefined } });
     let tries = 0;
     const timer = setInterval(() => {
       const v = $('video');
       if (v && v.currentTime + 2 < t) {
         v.currentTime = t;
+        if (wasPaused) (mp.pauseVideo ? mp.pauseVideo() : v.pause()); // a navegação religa; pausar pelo player mantém o botão em sincronia
         clearInterval(timer);
       } else if (++tries > 20) {
         clearInterval(timer);
@@ -368,12 +371,12 @@
     }, 200);
   };
 
-  // O app chama isto ao abrir o popover: tocando = mostra o player, senão volta ao início.
+  // O app chama isto ao abrir o popover: com faixa carregada (tocando ou pausada) = mostra o player; sem faixa = início.
   window.__ytmOnOpen = () => {
     try {
       if (subs) subs.at = 0; // reabrir o popover também atualiza os inscritos
       const v = $('video');
-      if (v && !v.paused) openPlayer(v);
+      if (v && v.currentSrc) openPlayer(v);
       else if (!isHome()) goHome();
     } catch (e) {}
   };
