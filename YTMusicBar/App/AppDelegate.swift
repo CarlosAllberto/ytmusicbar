@@ -48,7 +48,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if let on { item.state = on ? .on : .off }
             return item
         }
-        add("Abrir YTMusicBar", #selector(open)).toolTip = "Atalho global: Option+S"
+        let openItem = add("Abrir YTMusicBar", #selector(open), key: "s")
+        openItem.keyEquivalentModifierMask = .option  // só mostra ⌥S à direita; o atalho real é o HotKeyService
         add("Recarregar", #selector(reload))
         menu.addItem(.separator())
         add("Manter ordem das faixas", #selector(toggleOrder), on: Settings.keepOrder)
