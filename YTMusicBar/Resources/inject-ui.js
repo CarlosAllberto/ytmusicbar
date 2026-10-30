@@ -374,9 +374,27 @@
     setTimeout(run, 50);
   };
 
-  // Abre a página do player: ela é a rota /watch, não dá para abrir por propriedade ou botão.
-  // O site reinicia a faixa ao navegar, então devolvemos a posição anterior.
+  // Abre a página do player: ela é a rota /watch, não dá para abrir por propriedade.
+  // Caminho nativo: clique na barra do player (o site o desliga com disable-click-listener), que não recarrega a faixa.
+  // Se não abrir, navega por endpoint; isso reinicia a faixa, então devolvemos a posição anterior.
   const openPlayer = (video) => {
+    if (location.pathname.startsWith('/watch')) return;
+    const bar = $('ytmusic-player-bar');
+    const mid = bar && $('.middle-controls', bar);
+    if (mid) {
+      const was = bar.disableClickListener;
+      bar.disableClickListener = false;
+      mid.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true, cancelable: true }));
+      setTimeout(() => {
+        bar.disableClickListener = was;
+        if (!location.pathname.startsWith('/watch')) openPlayerByNavigate(video);
+      }, 800);
+      return;
+    }
+    openPlayerByNavigate(video);
+  };
+
+  const openPlayerByNavigate = (video) => {
     const mp = $('#movie_player');
     const d = mp && mp.getVideoData && mp.getVideoData();
     if (!d || !d.video_id || location.pathname.startsWith('/watch')) return;
