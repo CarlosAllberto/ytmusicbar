@@ -363,11 +363,15 @@
     const wasPaused = video.paused;
     navigate({ watchEndpoint: { videoId: d.video_id, playlistId: d.list || undefined } });
     let tries = 0;
+    let restored = false;
     const timer = setInterval(() => {
       const v = $('video');
-      if (v && v.currentTime + 2 < t) {
+      // Com a fonte ainda vazia (readyState 0) o seek é descartado, então só vale com metadados carregados.
+      if (v && v.readyState >= 1 && v.currentTime + 2 < t) {
         v.currentTime = t;
+        restored = true;
         if (wasPaused) (mp.pauseVideo ? mp.pauseVideo() : v.pause()); // a navegação religa; pausar pelo player mantém o botão em sincronia
+      } else if (restored && v && v.currentTime + 2 >= t) {
         clearInterval(timer);
       } else if (++tries > 20) {
         clearInterval(timer);
