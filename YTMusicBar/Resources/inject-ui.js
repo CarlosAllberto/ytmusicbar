@@ -90,7 +90,7 @@
     ${CONFIG.artistHeader} .buttons .play-button, ${CONFIG.artistHeader} .buttons .radio-button { margin: 0 !important; }
     ${CONFIG.searchCard} #actions { gap: 8px !important; }
     ${CONFIG.searchCard} #actions > yt-button-renderer { flex: 1 1 0; min-width: 0; }
-    ${CONFIG.searchCard} #actions .ytm-start { order: -1; flex: none; }
+    ${CONFIG.searchCard} #actions .ytm-start { order: -1; flex: none; position: relative; z-index: 2; }
     ${CONFIG.searchCard} #actions yt-button-renderer button { width: 100%; background: transparent !important; color: #fff !important;
       border: 1px solid rgba(255,255,255,.3) !important; }
     .ytm-start { height: 36px; padding: 0 16px; border: 0; border-radius: 18px; background: #fff; color: #030303;
@@ -315,9 +315,13 @@
       const b = document.createElement('button');
       b.className = 'ytm-start';
       b.textContent = 'Iniciar';
-      b.addEventListener('click', () => {
+      // O card abre o artista por gesto (mouseup vira "tap"), não só por click.
+      for (const t of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchend']) b.addEventListener(t, (e) => e.stopPropagation());
+      b.addEventListener('click', (e) => {
+        e.stopPropagation(); // senão o clique abre a página do artista, como o card
         const play = $(`${CONFIG.cardRow} ytmusic-play-button-renderer`, card);
-        if (play) play.click();
+        // sem bubbles: o clique sintético também subiria até o card
+        if (play) play.dispatchEvent(new MouseEvent('click', { bubbles: false }));
       });
       bar.prepend(b);
     }
