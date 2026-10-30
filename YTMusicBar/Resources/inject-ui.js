@@ -12,6 +12,8 @@
       'tp-yt-app-drawer#guide', // gaveta lateral que o botão abre
       'ytmusic-menu-service-item-download-renderer', // "Baixar" nos três pontinhos
       'tp-yt-paper-toast', // toasts, ex.: "Iniciando a rádio"
+      'ytmusic-player .fullscreen-button', // maximizar mídia sobre a capa
+      'ytmusic-card-shelf-renderer #actions', // Iniciar, Aleatório e Mix do resultado principal da busca
     ],
     // Escondidos só na página inicial (rota "/").
     homeHide: ['ytmusic-chip-cloud-renderer'], // chips Podcasts, Para treinar etc.
@@ -27,8 +29,6 @@
       'ytmusic-tabbed-search-results-renderer ytmusic-tabs', // abas YT MUSIC e BIBLIOTECA
       'ytmusic-tabbed-search-results-renderer ytmusic-chip-cloud-renderer', // filtros Artistas, Músicas etc.
     ],
-    searchCard: 'ytmusic-card-shelf-renderer', // resultado principal da busca
-    cardRow: 'ytmusic-responsive-list-item-renderer',
     firstTrack: 'ytmusic-shelf-renderer ytmusic-responsive-list-item-renderer',
     player: 'ytmusic-app-layout',
     subsBrowseId: 'FEmusic_library_corpus_artists',
@@ -88,11 +88,6 @@
     ${CONFIG.artistHeader} .buttons .subscribe { order: 3; margin: 0 0 0 auto !important; }
     ${CONFIG.artistHeader} .buttons .play-buttons > :not(.play-button):not(.radio-button) { order: 4; }
     ${CONFIG.artistHeader} .buttons .play-button, ${CONFIG.artistHeader} .buttons .radio-button { margin: 0 !important; }
-    ${CONFIG.searchCard} #actions { gap: 8px !important; }
-    ${CONFIG.searchCard} #actions > yt-button-renderer { flex: 1 1 0; min-width: 0; }
-    ${CONFIG.searchCard} #actions .ytm-start { order: -1; flex: none; position: relative; z-index: 2; }
-    ${CONFIG.searchCard} #actions yt-button-renderer button { width: 100%; background: transparent !important; color: #fff !important;
-      border: 1px solid rgba(255,255,255,.3) !important; }
     .ytm-start { height: 36px; padding: 0 16px; border: 0; border-radius: 18px; background: #fff; color: #030303;
       font: 500 14px Roboto, Arial, sans-serif; cursor: pointer; flex: none; }
     ${CONFIG.artistHeader} .play-button button, ${CONFIG.artistHeader} .radio-button button {
@@ -105,6 +100,16 @@
     ${CONFIG.artistHeader} .subscribe button::before { content: ""; width: 22px; height: 22px; background: currentColor;
       -webkit-mask: var(--ytm-heart) center / contain no-repeat; mask: var(--ytm-heart) center / contain no-repeat; }
     ${CONFIG.artistHeader} .subscribe[is-subscribed] button::before { -webkit-mask-image: var(--ytm-check); mask-image: var(--ytm-check); }
+    /* Voltar: no body, porque dentro do nav-bar ficava embaixo do campo de busca. */
+    .ytm-back { position: fixed; top: 12px; left: 12px; z-index: 2147483647; width: 40px; height: 40px; padding: 0; border: 0;
+      border-radius: 50%; background: rgba(255,255,255,.15); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .ytm-back[hidden] { display: none; }
+    .ytm-back::before { content: ""; width: 28px; height: 28px; background: currentColor; transform: scaleX(-1);
+      -webkit-mask: var(--ytm-chevron) center / contain no-repeat; mask: var(--ytm-chevron) center / contain no-repeat; }
+    /* Artista: cabeçalho só com o voltar (visibility mantém o layout do nav-bar). */
+    html[ytm-artist] ytmusic-nav-bar .left-content, html[ytm-artist] ytmusic-nav-bar .center-content, html[ytm-artist] ytmusic-nav-bar .right-content { visibility: hidden !important; }
+    /* Busca: o campo ocupa a barra inteira, então abre espaço à esquerda para o voltar. translateX com width explícita; margin-left não move. */
+    html[ytm-search-page] ytmusic-search-box:has(input:focus, input:not(:placeholder-shown)) { transform: translateX(52px); width: 326px !important; }
     :root {
       --ytm-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M9.4 6 8 7.4l4.6 4.6L8 16.6 9.4 18l6-6z'/></svg>");
       --ytm-heart: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z'/></svg>");
@@ -307,24 +312,40 @@
     }
   };
 
-  // Busca: Iniciar antes de Aleatório e Mix no resultado principal.
-  const updateSearch = () => {
-    for (const card of $$(CONFIG.searchCard)) {
-      const bar = $('#actions', card);
-      if (!bar || $('.ytm-start', bar) || $$('yt-button-renderer', bar).length < 2) continue;
-      const b = document.createElement('button');
-      b.className = 'ytm-start';
-      b.textContent = 'Iniciar';
-      // O card abre o artista por gesto (mouseup vira "tap"), não só por click.
-      for (const t of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchend']) b.addEventListener(t, (e) => e.stopPropagation());
-      b.addEventListener('click', (e) => {
-        e.stopPropagation(); // senão o clique abre a página do artista, como o card
-        const play = $(`${CONFIG.cardRow} ytmusic-play-button-renderer`, card);
-        // sem bubbles: o clique sintético também subiria até o card
-        if (play) play.dispatchEvent(new MouseEvent('click', { bubbles: false }));
-      });
-      bar.prepend(b);
+  // Voltar nas páginas de artista e de busca. A rota muda sem mexer no childList, então depende do poll de pathname.
+  // Reabrir o popover com música empilha /watch no histórico; voltar não pode parar no player.
+  let backFrom = '';
+  let backUntil = 0;
+  const updateBack = () => {
+    const p = location.pathname;
+    if (Date.now() < backUntil) {
+      if (p.startsWith('/watch')) {
+        backUntil = Date.now() + 2000;
+        history.back();
+        return;
+      }
+      if (p !== backFrom) backUntil = 0;
     }
+    const header = $(CONFIG.artistHeader);
+    // No /watch o cabeçalho continua visível por baixo do player e o botão cobriria a seta dele.
+    const artist = !p.startsWith('/watch') && (p.startsWith('/channel/') || p.startsWith('/@') || !!(header && header.offsetParent && $('.subscribe', header)));
+    const search = p.startsWith('/search');
+    const root = document.documentElement;
+    root.toggleAttribute('ytm-artist', artist);
+    root.toggleAttribute('ytm-search-page', search);
+    let b = $('.ytm-back');
+    if (!b) {
+      b = document.createElement('button');
+      b.className = 'ytm-back';
+      b.setAttribute('aria-label', 'Voltar');
+      b.addEventListener('click', () => {
+        backFrom = location.pathname;
+        backUntil = Date.now() + 2000;
+        history.back();
+      });
+      document.body.append(b);
+    }
+    b.hidden = !(artist || search);
   };
 
   const updateMenus = () => {
@@ -339,8 +360,8 @@
     try {
       updateHome();
       updateSearching();
+      updateBack();
       updateArtist();
-      updateSearch();
       updateFirst();
       updateMenus();
     } catch (e) {
