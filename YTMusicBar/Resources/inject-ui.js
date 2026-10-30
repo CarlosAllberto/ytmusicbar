@@ -382,6 +382,7 @@
   // O app chama isto ao abrir o popover: com faixa carregada (tocando ou pausada) = mostra o player; sem faixa = início.
   window.__ytmOnOpen = () => {
     try {
+      run(); // o timer do schedule pode ficar parado com a janela oculta: atualiza já, antes do primeiro quadro
       if (subs) subs.at = 0; // reabrir o popover também atualiza os inscritos
       const v = $('video');
       if (v && v.currentSrc) openPlayer(v);
@@ -395,6 +396,15 @@
     document.documentElement.append(style);
     new MutationObserver(schedule).observe(document, { childList: true, subtree: true });
     window.addEventListener('popstate', schedule);
+    document.addEventListener('visibilitychange', schedule);
+    // O site troca de página reaproveitando elementos já no DOM (só atributos mudam), então o MutationObserver não vê a rota mudar.
+    let lastPath = location.pathname;
+    setInterval(() => {
+      if (location.pathname !== lastPath) {
+        lastPath = location.pathname;
+        schedule();
+      }
+    }, 300);
     document.addEventListener('focusin', schedule);
     document.addEventListener('focusout', schedule);
     schedule();
