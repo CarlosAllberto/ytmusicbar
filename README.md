@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/icon.png" alt="YTMusicBar icon" width="128">
+
 # YTMusicBar
 
 **YouTube Music in the macOS menu bar, without ads.**
