@@ -21,6 +21,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.target = self
             button.action = #selector(statusItemClicked)
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            // O ícone de Now Playing do macOS aparece ao iniciar música e empurra o nosso para a esquerda;
+            // o popover não acompanha sozinho, então reancora.
+            for name in [NSWindow.didMoveNotification, NSWindow.didResizeNotification] {
+                NotificationCenter.default.addObserver(forName: name, object: button.window, queue: .main) { [weak self] _ in
+                    guard let self, self.popover.isShown, let button = self.statusItem.button else { return }
+                    self.popover.positioningRect = button.bounds
+                }
+            }
         }
         hotKey = HotKeyService { [weak self] in self?.togglePopover() }
     }
