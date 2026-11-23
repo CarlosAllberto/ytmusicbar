@@ -22,6 +22,8 @@ struct Page {
     var title = ""
     var subtitle = ""
     var isArtist = false
+    var channelId: String?  // artista: canal para inscrever-se
+    var subscribed = false
     var thumb: URL?
     var sections: [Section] = []
     var continuation: String?
@@ -110,6 +112,11 @@ enum InnerTube {
         return page
     }
 
+    /// Inscreve ou cancela a inscrição no canal do artista. Exige login.
+    static func subscribe(_ channelId: String, _ on: Bool) async throws {
+        _ = try await post(on ? "subscription/subscribe" : "subscription/unsubscribe", ["channelIds": [channelId]])
+    }
+
     private static func post(_ endpoint: String, _ extra: [String: Any], query: String = "") async throws -> Any {
         var req = URLRequest(url: URL(string: "https://music.youtube.com/youtubei/v1/\(endpoint)?prettyPrint=false\(query)")!)
         req.httpMethod = "POST"
@@ -137,6 +144,9 @@ enum InnerTube {
                     let h = v as? [String: Any]
                     page.title = text(h?["title"]); page.thumb = thumb(v)
                     page.isArtist = k == "musicImmersiveHeaderRenderer"
+                    if let s = (h?["subscriptionButton"] as? [String: Any])?["subscribeButtonRenderer"] as? [String: Any] {
+                        page.channelId = s["channelId"] as? String; page.subscribed = s["subscribed"] as? Bool ?? false
+                    }
                     page.subtitle = text(h?["monthlyListenerCount"]).isEmpty ? text(h?["subtitle"]) : text(h?["monthlyListenerCount"])
                 }
                 if page.continuation == nil, let c = (d["nextContinuationData"] as? [String: Any])?["continuation"] as? String { page.continuation = c }

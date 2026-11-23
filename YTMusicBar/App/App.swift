@@ -245,6 +245,8 @@ struct PageView: View {
 struct HeaderView: View {
     @EnvironmentObject var player: Player
     let page: Page
+    @ObservedObject private var auth = Auth.shared
+    @State private var subscribed: Bool?  // nil = o que veio na página
 
     // Faixas tocáveis da página, na ordem em que aparecem.
     private var tracks: [Item] { page.sections.flatMap(\.items).filter { $0.videoId != nil } }
@@ -258,6 +260,13 @@ struct HeaderView: View {
                 HStack(spacing: 10) {
                     Pill(title: "Iniciar", icon: nil, filled: true) { if let t = tracks.first { player.play(t, in: tracks) } }
                     Pill(title: "Aleatório", icon: "shuffle", filled: false) { let l = tracks.shuffled(); if let t = l.first { player.play(t, in: l) } }
+                    if auth.loggedIn, let id = page.channelId {
+                        let on = subscribed ?? page.subscribed
+                        Pill(title: on ? "Inscrito" : "Inscrever-se", icon: nil, filled: false) {
+                            subscribed = !on  // otimista; volta se a API falhar
+                            Task { do { try await InnerTube.subscribe(id, !on) } catch { subscribed = on } }
+                        }
+                    }
                 }.padding(.top, 8)
             }
             .padding(16).frame(maxWidth: .infinity, alignment: .leading)

@@ -13,8 +13,8 @@ targets:
       properties:
         CFBundleName: YTMusicBar
         CFBundleDisplayName: YTMusicBar
-        CFBundleShortVersionString: "2.0.2"
-        CFBundleVersion: "10"
+        CFBundleShortVersionString: "2.0.3"
+        CFBundleVersion: "11"
         NSPrincipalClass: NSApplication
         LSUIElement: true
         LSMinimumSystemVersion: "13.0"
