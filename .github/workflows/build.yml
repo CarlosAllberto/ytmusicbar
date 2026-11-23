@@ -40,4 +40,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" YTMusicBar.zip --title "$GITHUB_REF_NAME" --generate-notes
+        # Se a release já foi criada à mão (gh release create), só troca o zip e mantém as notas.
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" YTMusicBar.zip --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" YTMusicBar.zip --title "$GITHUB_REF_NAME" --generate-notes
+          fi
