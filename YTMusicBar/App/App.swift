@@ -70,6 +70,13 @@ struct ContentView: View {
     @State private var path: [String] = []
     @State private var showProfile = false
     @FocusState private var searchFocus: Bool
+    // Telas sem ScrollView (aviso de login, busca vazia) não têm barra de rolagem para compensar no topo.
+    private var scrolls: Bool {
+        switch mode {
+        case .search: !submitted.isEmpty
+        case .home, .library: auth.loggedIn
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -81,7 +88,16 @@ struct ContentView: View {
                     case .library:
                         if auth.loggedIn { PageView { try await InnerTube.library() } } else { Spacer() }
                     case .home:
-                        PageView { try await InnerTube.home() }.id(auth.loggedIn)
+                        if auth.loggedIn { PageView { try await InnerTube.home() } }
+                        else if auth.checked {
+                            VStack(spacing: 12) {
+                                Image(systemName: "person.crop.circle").font(.system(size: 44)).foregroundStyle(Theme.secondary)
+                                Text("Entre na sua conta").font(.title3.bold())
+                                Text("Faça login no YouTube Music para ver suas recomendações e sua biblioteca.")
+                                    .font(.callout).foregroundStyle(Theme.secondary).multilineTextAlignment(.center).frame(maxWidth: 260)
+                            }.padding(32).frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .ignoresSafeArea(edges: .top)  // centra no popover inteiro, não só abaixo da barra de cima
+                        } else { Spacer() }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -131,13 +147,15 @@ struct ContentView: View {
                         }.padding(8).frame(width: 190)
                     }
                 } else {
-                    Button { auth.login() } label: { Image(systemName: "person.crop.circle").font(.system(size: 24)) }.buttonStyle(Pointer()).help("Entrar")
+                    Button { auth.login() } label: {
+                        Image(systemName: "person.crop.circle").font(.system(size: 24)).frame(width: 34, height: 34).glass(Circle()) { $0 }
+                    }.buttonStyle(Pointer()).help("Entrar")
                 }
                 }
             }
         }
-        // À direita soma a largura da barra de rolagem (quando o sistema a reserva), para alinhar com o conteúdo.
-        .padding(.leading, 16).padding(.trailing, 16 + (NSScroller.preferredScrollerStyle == .legacy ? NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy) : 0))
+        // À direita soma a largura da barra de rolagem (quando o sistema a reserva e a tela tem rolagem), para alinhar com o conteúdo.
+        .padding(.leading, 16).padding(.trailing, 16 + (scrolls && NSScroller.preferredScrollerStyle == .legacy ? NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy) : 0))
         .padding(.top, 6).frame(height: 58)  // mais respiro acima do logo e dos botões
     }
 

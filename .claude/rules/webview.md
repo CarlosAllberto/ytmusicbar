@@ -14,7 +14,7 @@ paths:
 - `rulesReady`: a URL só carrega depois que `AdBlock.install` compila as regras; antes disso fica em `pending`. Carregar antes deixa passar requisições de anúncio.
 - A fila é nossa, não do site: um script captura o evento `ended` do `<video>` e chama `next()`. No fim da fila com `Prefs.keepOrder`, carrega `about:blank` para o site não seguir com a rádio automática; play nesse estado recarrega a última faixa.
 - Posição e duração vêm de um `Timer` de 1 s que lê o `<video>` por `evaluateJavaScript`. Play/pause e seek também mexem direto no `<video>`, não nos botões do site.
-- Teclas de mídia: `MPRemoteCommandCenter` no `init` do `Player`; `MPNowPlayingInfoCenter` recebe título, artista, duração e posição.
+- Now Playing e teclas de mídia: quem publica é o próprio WebKit, com os metadados do site. Não use `MPNowPlayingInfoCenter`/`MPRemoteCommandCenter`: aparece um segundo item no painel de mídia. Um script troca os handlers `nexttrack`/`previoustrack` do `navigator.mediaSession` pela nossa fila (mensagem `media`) e os eventos play/pause do `<video>` atualizam `playing`.
 - User agent Safari fixo (`customUserAgent`), igual ao da janela de login. Sandbox ligado, só com `network.client`.
 
 ## inject-ads.js

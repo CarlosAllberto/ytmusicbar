@@ -7,6 +7,7 @@ import CryptoKit
     static let shared = Auth()
     @Published var loggedIn = false
     @Published var photo: URL?
+    @Published private(set) var checked = false  // até o 1º refresh não se sabe se está logado; evita piscar o aviso de login
     private var window: NSWindow?
 
     private var store: WKHTTPCookieStore { WKWebsiteDataStore.default().httpCookieStore }
@@ -18,6 +19,7 @@ import CryptoKit
     func refresh() async {
         loggedIn = await cookies().contains { $0.name == "SAPISID" || $0.name == "__Secure-3PAPISID" }
         photo = loggedIn ? await InnerTube.avatar() : nil
+        checked = true
     }
 
     func logout() async {
