@@ -22,7 +22,7 @@ final class HotKeyService {
         let status = RegisterEventHotKey(UInt32(kVK_ANSI_S), UInt32(optionKey), id,
                                          GetApplicationEventTarget(), 0, &hotKey)
         if status != noErr {
-            NSLog("YTMusicBar: atalho Option+S indisponível (%d), outro app pode estar usando", status)
+            NSLog("YTMusicBar: atalho Option+S indisponível (%d), outro app (ex.: o YTMusicBar principal) pode estar usando", status)
         }
     }
 

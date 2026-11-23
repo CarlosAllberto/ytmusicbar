@@ -1,6 +1,6 @@
 # AGENTS.md
 
-App de menu bar para macOS (AppKit, macOS 13+) que toca o YouTube Music em uma WKWebView, sem anúncios. Uso pessoal. Código e comentários em português, sem travessões longos.
+App de menu bar para macOS (SwiftUI + AppKit, macOS 13+), só tray, com interface nativa para o YouTube Music e áudio numa WKWebView escondida, sem anúncios. Uso pessoal. Código e comentários em português, sem travessões longos.
 
 ## Comandos
 
@@ -12,15 +12,13 @@ xcodebuild -project YTMusicBar.xcodeproj -scheme YTMusicBar -configuration Debug
 pkill YTMusicBar; open build/Build/Products/Debug/YTMusicBar.app   # relançar após o build
 ```
 
-Não há testes nem lint. O app é validado manualmente (login, áudio, anúncios, ordem, teclas de mídia). Em Debug a WebView é inspecionável pelo Safari (Desenvolver, nome do Mac, YTMusicBar).
-
-Ponte de debug (só Debug, `WebViewHost.startDebugBridge`): grave JS em `~/Library/Containers/com.treendz.ytmusicbar/Data/tmp/ytm-eval.js` e o resultado sai em `ytm-eval.out`; `touch ytm-shot` gera `ytm.png`. A janela oculta pausa `requestAnimationFrame`, então os ícones do site podem faltar nas capturas.
+Não há testes nem lint. O app é validado manualmente (login, busca, áudio, anúncios, fila, letra e tradução, teclas de mídia, ⌥S). Para testar o ⌥S, feche outras instâncias do YTMusicBar: o atalho só registra em uma.
 
 ## Arquitetura em uma linha
 
-`AppDelegate` (status item + popover) mostra a `WKWebView` única do `WebViewHost`, que injeta três scripts JS (`Resources/inject-*.js`) e carrega regras de bloqueio (`Resources/rules*.json`); `MediaControls` liga as teclas de mídia ao player.
+`TrayDelegate` (`App/Tray.swift`: status item, popover 420x640, menu do clique direito, ⌥S) mostra o `ContentView` SwiftUI (`App/App.swift`, `Views/PlayerView.swift`), que lê tudo da API interna `InnerTube` (logado via `Auth`) e toca pelo `Player`, uma WKWebView escondida em `music.youtube.com/watch` com `inject-ads.js` e as regras `Resources/rules*.json` (`WebView/AdBlock.swift`).
 
-Detalhes por área ficam em `.claude/rules/` e carregam ao mexer nos arquivos correspondentes: `webview.md`, `js-scripts.md`, `services.md`, `adblock-rules.md`.
+Detalhes por área ficam em `.claude/rules/` e carregam ao mexer nos arquivos correspondentes: `interface.md`, `webview.md`, `services.md`.
 
 
 ## Lista de tarefas

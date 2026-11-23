@@ -18,14 +18,15 @@ English • <a href="README.pt-BR.md">Português</a>
 
 </div>
 
-YTMusicBar is a native menu bar app that plays [YouTube Music](https://music.youtube.com) in a compact popover. It blocks ads, hides the clutter and keeps the music playing when the popover is closed.
+YTMusicBar is a menu bar app with a native SwiftUI interface for [YouTube Music](https://music.youtube.com), in a compact popover. Home, search, artists, albums, playlists, your library and lyrics are drawn natively from YouTube Music's internal API. Audio plays through the official player in a hidden `WKWebView`, with ads blocked, and keeps playing when the popover is closed.
 
-The app loads the official YouTube Music website in a `WKWebView`. Your login is kept between launches.
+Your login is kept between launches.
 
 <p align="center">
-  <img src="docs/screenshots/home.png" alt="Home with the subscribed artists carousel" width="32%">
-  <img src="docs/screenshots/artist.png" alt="Artist page with Iniciar, Aleatório and Mix buttons" width="32%">
-  <img src="docs/screenshots/player.png" alt="Player page" width="32%">
+  <img src="docs/screenshots/home.png" alt="Home with subscribed artists and song mixes" width="24%">
+  <img src="docs/screenshots/search.png" alt="Search with best result, artists and songs" width="24%">
+  <img src="docs/screenshots/artist.png" alt="Artist page with Iniciar and Aleatório" width="24%">
+  <img src="docs/screenshots/player.png" alt="Player with progress, controls, queue and lyrics" width="24%">
 </p>
 
 > [!NOTE]
@@ -33,15 +34,15 @@ The app loads the official YouTube Music website in a `WKWebView`. Your login is
 
 ## Features
 
-- **No ads:** network rules block ad requests and an injected script skips and hides what gets through.
-- **Subscribed artists carousel:** the home page starts with the artists you follow, refreshed every time you come back to it.
-- **Cleaner interface:** no hamburger menu, mood chips, video shelves or **Baixar** item in the track menus. Text cannot be selected.
-- **Quick start:** artist pages and search results get an **Iniciar** button before Aleatório and Mix. Subscribing is a single heart or check icon.
-- **Original track order:** shuffle is turned off when a playlist or album starts, and playback stops at the end instead of drifting to suggestions. Toggle it from the menu.
+- **Native interface:** home, artist, album and playlist pages, and your library (saved playlists and albums, liked songs, subscribed artists) in SwiftUI, not a web page. Uses Liquid Glass on macOS 26.
+- **Search as you type:** top result plus artists, songs and albums.
+- **Lyrics with translation:** the player screen shows the lyrics when YouTube Music has them, and **Traduzir** translates them to Portuguese.
+- **Queue:** "Up next" list, shuffle, repeat all or one, and seeking on the progress bar. Artist pages get **Iniciar** and **Aleatório** buttons, and track lists get **Tocar tudo**.
+- **No ads:** network rules block ad requests and an injected script skips what gets through in the hidden player.
+- **Original track order:** at the end of the queue playback stops instead of drifting to YouTube's automatic radio. Toggle it from the menu.
 - **Media keys and Now Playing:** play, pause, next and previous work from the keyboard, and the current track shows in the macOS Now Playing widget.
-- **Smart reopen:** the popover opens on the player if music is playing, otherwise on the home page.
-- **Global shortcut:** <kbd>⌥</kbd> <kbd>S</kbd> opens and closes the popover from any app.
-- **Launch at login** and **no Dock icon**.
+- **Google sign-in:** sign in from the profile button; without an account, home and search still work.
+- **Menu bar only:** right-click menu, global shortcut <kbd>⌥</kbd> <kbd>S</kbd>, launch at login and no Dock icon.
 
 ## Install
 
@@ -84,46 +85,45 @@ The Xcode project is generated from [`project.yml`](project.yml) and is not comm
 | Action | How |
 | --- | --- |
 | Open or close the popover | Click the icon or press <kbd>⌥</kbd> <kbd>S</kbd> |
+| Search | Magnifying glass at the top, then type |
+| Open the player, lyrics and queue | Click the mini player at the bottom |
+| Sign in | Profile button at the top |
+| Library or sign out | Profile picture at the top |
 | Open the menu | Right-click the icon |
-| Reload the page | Menu, **Recarregar** |
+| Reload the interface | Menu, **Recarregar** (music keeps playing) |
 | Keep the original track order | Menu, **Manter ordem das faixas** |
 | Launch at login | Menu, **Iniciar com o macOS** |
 | Quit | Menu, **Sair** |
 
-The first time, sign in with your Google account inside the popover.
-
 > [!NOTE]
-> The app menu is in Portuguese for now. YouTube Music follows your account language.
+> The interface is in Portuguese for now, and the API is called with the Portuguese (Brazil) locale.
 
 ## How it works
 
 ```
 YTMusicBar/
-├── App/        AppDelegate: status item, popover and menu
-├── Views/      Popover content
-├── WebView/    Shared WKWebView and ad block rule loading
-├── Services/   Media controls, global shortcut (Carbon), settings
-└── Resources/  Injected scripts and network rules
+├── App/        SwiftUI entry, interface views, status item, popover and menu
+├── Views/      Full-screen player with lyrics and queue
+├── Services/   InnerTube API, Google login, player, translation, shortcut, settings
+├── WebView/    Ad block rule loading
+└── Resources/  Ad script, network rules and assets
 ```
 
-- **AppKit, not `MenuBarExtra`.** A status item with a popover allows a right-click menu and full control of the WebView. This is also the simplest way to keep the page alive.
-- **One WebView that stays alive.** `WebViewHost` creates a single `WKWebView`. When the popover closes, the view moves to a hidden window, so the audio keeps playing. The page loads only after the block rules compile.
-- **Three injected scripts** in [`Resources/`](YTMusicBar/Resources):
-  - `inject-ads.js` skips ads and removes promotions.
-  - `inject-order.js` keeps the original track order.
-  - `inject-ui.js` hides elements, adds the carousel and the buttons, and decides which page to show on reopen.
-- **Settings** live in `UserDefaults`, because `@AppStorage` only works inside SwiftUI views.
+- **Status item, not `MenuBarExtra`.** `TrayDelegate` owns an `NSStatusItem` and an `NSPopover` hosting the SwiftUI interface, which allows the right-click menu.
+- **InnerTube for the interface.** `InnerTube.swift` calls `music.youtube.com/youtubei/v1` (browse, search, next) and turns the JSON into pages, sections and items. When signed in, requests carry your cookies and a `SAPISIDHASH` header.
+- **A hidden WebView for audio.** `Player.swift` loads `music.youtube.com/watch?v=ID` in an off-screen `WKWebView`, so YouTube's own player handles the stream. The app keeps its own queue and moves to the next track when the video ends. The page loads only after the block rules compile.
+- **Login** happens in a separate window with Google's sign-in page. Cookies live in the default WebKit data store, shared by the player.
+- **Translation** uses Google Translate's free public endpoint, without a key.
+- **Settings** live in `UserDefaults`.
 
 ## Customize
 
-YouTube changes its page often. Each script keeps its selectors in a `CONFIG` object at the top of the file:
-
 | What | Where |
 | --- | --- |
-| Ad selectors | `CONFIG` in `inject-ads.js` |
-| Track order selectors | `CONFIG` in `inject-order.js` |
-| Hidden elements, carousel, buttons | `CONFIG` in `inject-ui.js` |
-| Play, next, previous buttons | `Services/MediaControls.swift` |
+| Ad selectors | `CONFIG` in `Resources/inject-ads.js` |
+| API client version and search filters | `Services/InnerTube.swift` |
+| Translation target language | `Services/Translate.swift` |
+| Global shortcut | `Services/HotKeyService.swift` |
 
 **Network rules.** Every `Resources/rules*.json` file is compiled at launch. To add a list in the Adblock format:
 
@@ -137,19 +137,10 @@ The converter handles the basics only: `||domain^`, simple URL patterns and `##s
 ## Limitations
 
 > [!NOTE]
-> Ad blocking and the interface changes depend on YouTube's HTML and can break at any time. If something stops working, update the selectors above.
+> InnerTube is an internal, undocumented API. The app uses a fixed client version and fixed search filters, so pages or search can break when YouTube changes it. Ad blocking depends on YouTube's HTML and can break too.
 
-- The ad selectors and the shuffle and queue selectors were not validated against every page variant.
-- Playback stops at the end of a playlist only when the original queue size was captured. Very short playlists or fast track changes can slip through.
-- Opening the player page restarts the track, so the app restores the position afterwards. You may hear a short skip.
-- The shortcut is always on and fixed to <kbd>⌥</kbd> <kbd>S</kbd>.
+- Translation uses an unofficial endpoint and can stop working at any time.
+- Lyrics only show when YouTube Music has them for the track.
+- Signing out erases all YouTube website data stored by the app.
+- The shortcut is always on and fixed to <kbd>⌥</kbd> <kbd>S</kbd>. If another copy of YTMusicBar is running, only one gets it.
 - One account at a time.
-
-## Development
-
-Debug builds include tools to inspect the page:
-
-- **Web Inspector:** inspect the `WKWebView` from Safari's Develop menu.
-- **Debug bridge:** write JavaScript to `~/Library/Containers/com.treendz.ytmusicbar/Data/tmp/ytm-eval.js` and the app runs it in the page and writes the result to `ytm-eval.out`. Create `ytm-shot` in the same folder to save a screenshot as `ytm.png`.
-
-The hidden window pauses `requestAnimationFrame`, so site icons can be missing from screenshots. Do not use `requestAnimationFrame` in the injected scripts.
