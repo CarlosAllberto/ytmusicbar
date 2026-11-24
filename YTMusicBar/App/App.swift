@@ -220,7 +220,8 @@ struct PageView: View {
     var key = ""  // muda para recarregar sem descartar a página atual (evita piscar)
     let load: () async throws -> Page
     @State private var page: Page?
-    @State private var error: String?
+    @State private var error: Error?
+    @State private var attempt = 0  // "Tentar de novo" muda o id da task
 
     var body: some View {
         ScrollView {
@@ -229,15 +230,22 @@ struct PageView: View {
                     if !page.title.isEmpty { HeaderView(page: page) }
                     ForEach(page.sections) { SectionView(section: $0) }
                 } else if let error {
-                    Text(error).foregroundStyle(.red).padding(16)
+                    let offline = (error as? URLError).map { [.notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed].contains($0.code) } ?? false
+                    VStack(spacing: 12) {
+                        Image(systemName: offline ? "wifi.slash" : "exclamationmark.triangle").font(.system(size: 40)).foregroundStyle(Theme.secondary)
+                        Text(offline ? "Sem conexão" : "Não foi possível carregar").font(.title3.bold())
+                        Text(offline ? "Verifique sua internet e tente de novo." : "Algo deu errado ao falar com o YouTube Music.")
+                            .font(.callout).foregroundStyle(Theme.secondary).multilineTextAlignment(.center).frame(maxWidth: 260)
+                        Pill(title: "Tentar de novo", icon: "arrow.clockwise", filled: false) { self.error = nil; attempt += 1 }.padding(.top, 4)
+                    }.frame(maxWidth: .infinity).padding(.top, 120)
                 } else {
                     ProgressView().frame(maxWidth: .infinity).padding(40)
                 }
             }.padding(.top, page?.isArtist == true ? 0 : 14).padding(.bottom, 16)  // respiro sob o topo; o banner do artista encosta no alto
         }
         .background(Theme.bg)
-        .task(id: key) {
-            do { page = try await load(); error = nil } catch is CancellationError {} catch { self.error = "\(error)" }
+        .task(id: "\(key)#\(attempt)") {
+            do { page = try await load(); error = nil } catch is CancellationError {} catch { self.error = error }
         }
     }
 }
