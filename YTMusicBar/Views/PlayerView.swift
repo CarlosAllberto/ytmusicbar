@@ -43,7 +43,7 @@ struct PlayerView: View {
                     }
                 } else {
                     ForEach(Array(player.queue.enumerated()), id: \.element.id) { i, t in
-                        Button { player.play(at: i) } label: { Row(item: t) }.buttonStyle(Pointer())
+                        Button { tapQueue(i) } label: { Row(item: t) }.buttonStyle(Pointer())
                             .padding(6).background(i == player.index ? Color.white.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 6))
                     }
                 }
@@ -138,6 +138,9 @@ struct PlayerView: View {
             }
         }.buttonStyle(Pointer()).font(.body)
     }
+
+    // Tocar a faixa atual na fila não a reinicia.
+    private func tapQueue(_ i: Int) { if i != player.index { player.play(at: i) } }
 
     private func time(_ s: Double) -> String { String(format: "%d:%02d", Int(s) / 60, Int(s) % 60) }
 }

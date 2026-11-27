@@ -59,6 +59,9 @@ enum Theme {
     static let accent = Color(red: 1, green: 0.27, blue: 0.27)  // vermelho do YouTube Music, para a faixa atual
 }
 
+// Abre o player cheio a partir das listas (tocar de novo a faixa atual não a reinicia).
+extension EnvironmentValues { @Entry var openPlayer: () -> Void = {} }
+
 struct ContentView: View {
     enum Mode { case home, search, library }
     @EnvironmentObject var player: Player
@@ -110,6 +113,7 @@ struct ContentView: View {
                 PlayerView(close: { withAnimation { showPlayer = false } }, openArtist: { id in showPlayer = false; path.append(id) }).background(Theme.bg).transition(.move(edge: .bottom))
             }
         }
+        .environment(\.openPlayer) { withAnimation { showPlayer = true } }
         .preferredColorScheme(.dark)
         .task { await auth.refresh() }
         .task(id: query) {
@@ -317,6 +321,7 @@ struct Pill: View {
 
 struct SectionView: View {
     @EnvironmentObject var player: Player
+    @Environment(\.openPlayer) private var openPlayer
     let section: Section
     @State private var pos = 0
     private var isRows: Bool { section.items.first?.isRow == true }
@@ -374,7 +379,7 @@ struct SectionView: View {
     @ViewBuilder private func act<C: View>(_ i: Item, @ViewBuilder _ label: () -> C) -> some View {
         if i.videoId != nil {
             // Sem Button externo: o nome do artista na linha é um botão próprio e tem prioridade sobre o toque.
-            label().contentShape(Rectangle()).onTapGesture { player.play(i, in: section.items) }.pointer()
+            label().contentShape(Rectangle()).onTapGesture { if i.videoId == player.current?.videoId { openPlayer() } else { player.play(i, in: section.items) } }.pointer()
         } else if let b = i.browseId {
             NavigationLink(value: b) { label() }.buttonStyle(Pointer())
         }
