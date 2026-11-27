@@ -124,6 +124,9 @@ final class Player: NSObject, ObservableObject, WKScriptMessageHandler {
             w.isReleasedWhenClosed = false
             // .transient esconde do Mission Control/Exposé; .ignoresCycle tira do ⌘`.
             w.collectionBehavior = [.transient, .ignoresCycle]
+            // O macOS traz a janela para a tela ao trocar de monitor ou acordar; transparente e sem clique, ela nunca aparece.
+            w.alphaValue = 0
+            w.ignoresMouseEvents = true
             w.contentView = web
             w.orderBack(nil)
             host = w
